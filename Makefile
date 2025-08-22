@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/achetronic/mcp-forge:placeholder
+IMG ?= ghcr.io/achetronic/prometheus-mcp:placeholder
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -80,11 +80,11 @@ swagger: install-swag ## Build Swagger documents.
 
 .PHONY: build
 build: fmt vet ## Build CLI binary.
-	go build -o bin/mcp-forge-$(GO_OS)-$(GO_ARCH) cmd/main.go
+	go build -o bin/prometheus-mcp-$(GO_OS)-$(GO_ARCH) cmd/main.go
 
 .PHONY: run
 run: fmt vet ## Run a controller from your host.
-	go run ./cmd/ --config ./docs/config-http.yaml
+	go run ./cmd/ --config ./docs/config-http-noauth.yaml
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
@@ -104,9 +104,9 @@ package: ## Package binary.
 	@mkdir -p dist
 
 	@if [ "$(OS)" = "linux" ]; then \
-		tar --transform="s/mcp-forge-$(GO_OS)-$(GO_ARCH)/mcp-forge/" -cvzf dist/$(PACKAGE_NAME) -C bin mcp-forge-$(GO_OS)-$(GO_ARCH) -C ../ LICENSE README.md; \
+		tar --transform="s/prometheus-mcp-$(GO_OS)-$(GO_ARCH)/prometheus-mcp/" -cvzf dist/$(PACKAGE_NAME) -C bin prometheus-mcp-$(GO_OS)-$(GO_ARCH) -C ../ LICENSE README.md; \
 	elif [ "$(OS)" = "darwin" ]; then \
-		tar -cvzf dist/$(PACKAGE_NAME) -s '/mcp-forge-$(GO_OS)-$(GO_ARCH)/mcp-forge/' -C bin mcp-forge-$(GO_OS)-$(GO_ARCH) -C ../ LICENSE README.md; \
+		tar -cvzf dist/$(PACKAGE_NAME) -s '/prometheus-mcp-$(GO_OS)-$(GO_ARCH)/prometheus-mcp/' -C bin prometheus-mcp-$(GO_OS)-$(GO_ARCH) -C ../ LICENSE README.md; \
 	else \
 		echo "Unsupported OS: $(GO_OS)"; \
 		exit 1; \

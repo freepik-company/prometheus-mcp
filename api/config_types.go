@@ -82,10 +82,27 @@ type OAuthProtectedResourceConfig struct {
 	DPoPBoundAccessTokensRequired         bool     `yaml:"dpop_bound_access_tokens_required,omitempty"`
 }
 
+// PrometheusAuthConfig represents authentication configuration for Prometheus
+type PrometheusAuthConfig struct {
+	Type     string `yaml:"type,omitempty"`     // "basic", "token", or empty for no auth
+	Username string `yaml:"username,omitempty"` // For basic auth
+	Password string `yaml:"password,omitempty"` // For basic auth
+	Token    string `yaml:"token,omitempty"`    // For bearer token auth
+}
+
+// PrometheusConfig represents the Prometheus client configuration
+type PrometheusConfig struct {
+	URL     string               `yaml:"url"`
+	Timeout string               `yaml:"timeout,omitempty"`
+	OrgID   string               `yaml:"org_id,omitempty"` // X-Scope-OrgId header for multi-tenant
+	Auth    PrometheusAuthConfig `yaml:"auth,omitempty"`
+}
+
 // Configuration represents the complete configuration structure
 type Configuration struct {
 	Server                   ServerConfig                 `yaml:"server,omitempty"`
 	Middleware               MiddlewareConfig             `yaml:"middleware,omitempty"`
 	OAuthAuthorizationServer OAuthAuthorizationServer     `yaml:"oauth_authorization_server,omitempty"`
 	OAuthProtectedResource   OAuthProtectedResourceConfig `yaml:"oauth_protected_resource,omitempty"`
+	Prometheus               PrometheusConfig             `yaml:"prometheus,omitempty"`
 }

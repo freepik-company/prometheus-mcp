@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"log/slog"
-	"mcp-forge/api"
-	"mcp-forge/internal/config"
+	"prometheus-mcp/api"
+	"prometheus-mcp/internal/config"
 	"os"
 )
 

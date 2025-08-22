@@ -6,10 +6,10 @@ import (
 	"time"
 
 	//
-	"mcp-forge/internal/globals"
-	"mcp-forge/internal/handlers"
-	"mcp-forge/internal/middlewares"
-	"mcp-forge/internal/tools"
+	"prometheus-mcp/internal/globals"
+	"prometheus-mcp/internal/handlers"
+	"prometheus-mcp/internal/middlewares"
+	"prometheus-mcp/internal/tools"
 
 	//
 	"github.com/mark3labs/mcp-go/server"
@@ -52,8 +52,9 @@ func main() {
 	tm := tools.NewToolsManager(tools.ToolsManagerDependencies{
 		AppCtx: appCtx,
 
-		McpServer:   mcpServer,
-		Middlewares: []middlewares.ToolMiddleware{},
+		McpServer:       mcpServer,
+		Middlewares:     []middlewares.ToolMiddleware{},
+		HandlersManager: hm,
 	})
 	tm.AddTools()
 

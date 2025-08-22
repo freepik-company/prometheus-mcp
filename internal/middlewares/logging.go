@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"mcp-forge/internal/globals"
+	"prometheus-mcp/internal/globals"
 	"net/http"
 	"time"
 )

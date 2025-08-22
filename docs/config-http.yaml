@@ -44,7 +44,7 @@ oauth_authorization_server:
 # Endpoint: /.well-known/oauth-protected-resource
 oauth_protected_resource:
   enabled: true
-  resource: "https://mcp-forge.example.com"
+  resource: "https://prometheus-mcp.example.com"
   auth_servers:
     - "https://keycloak.example.com/realms/mcp-servers"
   jwks_uri: *JwksUri
@@ -53,7 +53,7 @@ oauth_protected_resource:
     - profile
     - email
     - groups
-    - mcp-forge/custom-audience
+    - prometheus-mcp/custom-audience
 
   # Optional parameters (currently empty)
   bearer_methods_supported: []

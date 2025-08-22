@@ -1,8 +1,9 @@
 package tools
 
 import (
-	"mcp-forge/internal/globals"
-	"mcp-forge/internal/middlewares"
+	"prometheus-mcp/internal/globals"
+	"prometheus-mcp/internal/handlers"
+	"prometheus-mcp/internal/middlewares"
 
 	//
 	"github.com/mark3labs/mcp-go/mcp"
@@ -12,8 +13,9 @@ import (
 type ToolsManagerDependencies struct {
 	AppCtx *globals.ApplicationContext
 
-	McpServer   *server.MCPServer
-	Middlewares []middlewares.ToolMiddleware
+	McpServer       *server.MCPServer
+	Middlewares     []middlewares.ToolMiddleware
+	HandlersManager *handlers.HandlersManager
 }
 
 type ToolsManager struct {
@@ -28,19 +30,43 @@ func NewToolsManager(deps ToolsManagerDependencies) *ToolsManager {
 
 func (tm *ToolsManager) AddTools() {
 
-	// 1. Describe a tool, then add it
-	tool := mcp.NewTool("hello_world",
-		mcp.WithDescription("Say hello to someone"),
-		mcp.WithString("name",
+	// 1. Prometheus query tool
+	tool := mcp.NewTool("prometheus_query",
+		mcp.WithDescription("Execute a PromQL query against Prometheus"),
+		mcp.WithString("query",
 			mcp.Required(),
-			mcp.Description("Name of the person to greet"),
+			mcp.Description("The PromQL query to execute"),
+		),
+		mcp.WithString("time",
+			mcp.Description("Timestamp for the query (RFC3339 format). If not provided, uses current time"),
 		),
 	)
-	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolHello)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusQuery)
 
-	// 2. Describe and add another tool
-	tool = mcp.NewTool("whoami",
-		mcp.WithDescription("Expose information about the user"),
+	// 2. Prometheus range query tool
+	tool = mcp.NewTool("prometheus_range_query",
+		mcp.WithDescription("Execute a PromQL range query against Prometheus"),
+		mcp.WithString("query",
+			mcp.Required(),
+			mcp.Description("The PromQL query to execute"),
+		),
+		mcp.WithString("start",
+			mcp.Required(),
+			mcp.Description("Start time for the range query (RFC3339 format)"),
+		),
+		mcp.WithString("end",
+			mcp.Required(),
+			mcp.Description("End time for the range query (RFC3339 format)"),
+		),
+		mcp.WithString("step",
+			mcp.Description("Step duration for the range query (e.g., '30s', '1m', '5m'). Defaults to '1m'"),
+		),
 	)
-	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolWhoami)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusRangeQuery)
+
+	// 3. Prometheus metrics list tool
+	tool = mcp.NewTool("prometheus_list_metrics",
+		mcp.WithDescription("List all available metrics from Prometheus"),
+	)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusListMetrics)
 }

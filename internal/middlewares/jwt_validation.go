@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	//
-	"mcp-forge/internal/globals"
+	"prometheus-mcp/internal/globals"
 
 	//
 	"github.com/google/cel-go/cel"

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"mcp-forge/api"
+	"prometheus-mcp/api"
 	"os"
 
 	"gopkg.in/yaml.v3"
