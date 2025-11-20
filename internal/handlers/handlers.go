@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"prometheus-mcp/api"
 	"prometheus-mcp/internal/globals"
-	"net/http"
 	"time"
 
 	prometheusapi "github.com/prometheus/client_golang/api"

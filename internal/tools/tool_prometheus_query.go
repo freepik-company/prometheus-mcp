@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alpkeskin/gotoon"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -46,11 +47,11 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 	}
 
 	// Convert result to JSON
-	resultJSON, err := json.MarshalIndent(result, "", "  ")
+	resultTOON, err := gotoon.Encode(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
 	return mcp.NewToolResultText(fmt.Sprintf("Prometheus Query Results:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
-		args.Query, timestamp.Format(time.RFC3339), string(resultJSON))), nil
+		args.Query, timestamp.Format(time.RFC3339), resultTOON)), nil
 }

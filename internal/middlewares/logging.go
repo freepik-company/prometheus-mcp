@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"prometheus-mcp/internal/globals"
 	"net/http"
+	"prometheus-mcp/internal/globals"
 	"time"
 )
 
