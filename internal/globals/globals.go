@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"os"
 	"prometheus-mcp/api"
 	"prometheus-mcp/internal/config"
-	"os"
 )
 
 type ApplicationContext struct {

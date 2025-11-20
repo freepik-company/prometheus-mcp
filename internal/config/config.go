@@ -1,8 +1,8 @@
 package config
 
 import (
-	"prometheus-mcp/api"
 	"os"
+	"prometheus-mcp/api"
 
 	"gopkg.in/yaml.v3"
 )

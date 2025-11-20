@@ -3,6 +3,7 @@ module prometheus-mcp
 go 1.24
 
 require (
+	github.com/alpkeskin/gotoon v0.1.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/cel-go v0.26.0
 	github.com/mark3labs/mcp-go v0.37.0

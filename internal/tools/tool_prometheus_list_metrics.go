@@ -2,10 +2,10 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/alpkeskin/gotoon"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -32,13 +32,13 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 	}
 
 	// Convert to JSON for better formatting
-	resultJSON, err := json.MarshalIndent(map[string]interface{}{
+	resultTOON, err := gotoon.Encode(map[string]interface{}{
 		"total_metrics": len(result),
 		"metrics":       result,
-	}, "", "  ")
+	})
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Available Prometheus Metrics:\n\n%s", string(resultJSON))), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Available Prometheus Metrics:\n\n%s", resultTOON)), nil
 }
