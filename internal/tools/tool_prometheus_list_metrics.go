@@ -2,7 +2,9 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/alpkeskin/gotoon"
@@ -15,6 +17,26 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		return mcp.NewToolResultError("Prometheus client not initialized"), nil
 	}
 
+	// Parse arguments
+	var args struct {
+		Query string `json:"query,omitempty"`
+	}
+
+	argsBytes, err := json.Marshal(request.Params.Arguments)
+	if err != nil {
+		return mcp.NewToolResultError("failed to marshal arguments: " + err.Error()), nil
+	}
+	if err = json.Unmarshal(argsBytes, &args); err != nil {
+		return mcp.NewToolResultError("failed to parse arguments: " + err.Error()), nil
+	}
+
+	// Validate glob pattern if provided
+	if args.Query != "" {
+		if _, err := filepath.Match(args.Query, ""); err != nil {
+			return mcp.NewToolResultError("invalid glob pattern: " + err.Error()), nil
+		}
+	}
+
 	// Get label values for __name__ which contains all metric names
 	metricNames, warnings, err := tm.dependencies.HandlersManager.PrometheusClient.LabelValues(ctx, "__name__", []string{}, time.Now().Add(-time.Hour), time.Now())
 	if err != nil {
@@ -25,10 +47,14 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		tm.dependencies.AppCtx.Logger.Warn("Prometheus list metrics warnings", "warnings", warnings)
 	}
 
-	// Format the result
+	// Format the result, applying filter if query is provided
 	var result []string
 	for _, name := range metricNames {
-		result = append(result, string(name))
+		if args.Query == "" {
+			result = append(result, string(name))
+		} else if matched, _ := filepath.Match(args.Query, string(name)); matched {
+			result = append(result, string(name))
+		}
 	}
 
 	// Convert to JSON for better formatting

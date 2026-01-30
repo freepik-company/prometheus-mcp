@@ -67,6 +67,9 @@ func (tm *ToolsManager) AddTools() {
 	// 3. Prometheus metrics list tool
 	tool = mcp.NewTool("prometheus_list_metrics",
 		mcp.WithDescription("List all available metrics from Prometheus"),
+		mcp.WithString("query",
+			mcp.Description("Optional glob pattern to filter metrics (e.g., 'redis*', '*cpu*')"),
+		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusListMetrics)
 }
