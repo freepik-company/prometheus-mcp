@@ -66,9 +66,14 @@ func NewHandlersManager(deps HandlersManagerDependencies) *HandlersManager {
 }
 
 // QueryPrometheus executes a PromQL query against Prometheus
-func (hm *HandlersManager) QueryPrometheus(ctx context.Context, query string, timestamp time.Time) (interface{}, error) {
+func (hm *HandlersManager) QueryPrometheus(ctx context.Context, query string, timestamp time.Time, orgID string) (interface{}, error) {
 	if hm.PrometheusClient == nil {
 		return nil, fmt.Errorf("prometheus client not initialized")
+	}
+
+	// Add org_id to context if provided for dynamic tenant override
+	if orgID != "" {
+		ctx = context.WithValue(ctx, "org_id", orgID)
 	}
 
 	result, warnings, err := hm.PrometheusClient.Query(ctx, query, timestamp)
@@ -84,9 +89,14 @@ func (hm *HandlersManager) QueryPrometheus(ctx context.Context, query string, ti
 }
 
 // QueryRangePrometheus executes a range query against Prometheus
-func (hm *HandlersManager) QueryRangePrometheus(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration) (interface{}, error) {
+func (hm *HandlersManager) QueryRangePrometheus(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, orgID string) (interface{}, error) {
 	if hm.PrometheusClient == nil {
 		return nil, fmt.Errorf("prometheus client not initialized")
+	}
+
+	// Add org_id to context if provided for dynamic tenant override
+	if orgID != "" {
+		ctx = context.WithValue(ctx, "org_id", orgID)
 	}
 
 	r := v1.Range{
@@ -119,9 +129,18 @@ func (pt *prometheusTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// Clone the request to avoid modifying the original
 	reqClone := req.Clone(req.Context())
 
-	// Add X-Scope-OrgId header if configured
-	if pt.config.OrgID != "" {
-		reqClone.Header.Set("X-Scope-OrgId", pt.config.OrgID)
+	// Determine org_id: use from context if provided, otherwise use default from config
+	orgID := pt.config.OrgID // Default from config
+	if ctxOrgID := req.Context().Value("org_id"); ctxOrgID != nil {
+		if id, ok := ctxOrgID.(string); ok && id != "" {
+			orgID = id // Override with context value
+			pt.logger.Debug("Using org_id from context", "org_id", orgID)
+		}
+	}
+
+	// Add X-Scope-OrgId header if we have an org_id (from context or config)
+	if orgID != "" {
+		reqClone.Header.Set("X-Scope-OrgId", orgID)
 	}
 
 	// Add authentication based on type

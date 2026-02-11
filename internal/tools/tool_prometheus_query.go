@@ -15,6 +15,7 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 	var args struct {
 		Query string `json:"query"`
 		Time  string `json:"time,omitempty"`
+		OrgID string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -40,8 +41,8 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		timestamp = time.Now()
 	}
 
-	// Execute query
-	result, err := tm.dependencies.HandlersManager.QueryPrometheus(ctx, args.Query, timestamp)
+	// Execute query with optional org_id override
+	result, err := tm.dependencies.HandlersManager.QueryPrometheus(ctx, args.Query, timestamp, args.OrgID)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute Prometheus query: " + err.Error()), nil
 	}

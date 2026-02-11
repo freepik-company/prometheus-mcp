@@ -40,6 +40,9 @@ func (tm *ToolsManager) AddTools() {
 		mcp.WithString("time",
 			mcp.Description("Timestamp for the query (RFC3339 format). If not provided, uses current time"),
 		),
+		mcp.WithString("org_id",
+			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
+		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusQuery)
 
@@ -61,6 +64,9 @@ func (tm *ToolsManager) AddTools() {
 		mcp.WithString("step",
 			mcp.Description("Step duration for the range query (e.g., '30s', '1m', '5m'). Defaults to '1m'"),
 		),
+		mcp.WithString("org_id",
+			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
+		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusRangeQuery)
 
@@ -69,6 +75,9 @@ func (tm *ToolsManager) AddTools() {
 		mcp.WithDescription("List all available metrics from Prometheus"),
 		mcp.WithString("query",
 			mcp.Description("Optional glob pattern to filter metrics (e.g., 'redis*', '*cpu*')"),
+		),
+		mcp.WithString("org_id",
+			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
 		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusListMetrics)
