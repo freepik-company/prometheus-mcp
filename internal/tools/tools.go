@@ -35,19 +35,19 @@ func NewToolsManager(deps ToolsManagerDependencies) *ToolsManager {
 // that includes the list of available tenants from config
 func (tm *ToolsManager) buildOrgIDDescription() string {
 	baseDesc := "Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header)."
-	
+
 	config := tm.dependencies.AppCtx.Config.Prometheus
-	
+
 	// Add default tenant info
 	if config.OrgID != "" {
 		baseDesc += fmt.Sprintf(" Default: '%s'.", config.OrgID)
 	}
-	
+
 	// Add available tenants if configured
 	if len(config.AvailableOrgs) > 0 {
 		baseDesc += fmt.Sprintf(" Available tenants: [%s].", strings.Join(config.AvailableOrgs, ", "))
 	}
-	
+
 	return baseDesc
 }
 

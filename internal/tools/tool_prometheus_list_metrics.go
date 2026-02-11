@@ -43,7 +43,7 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 	if args.OrgID != "" {
 		ctx = context.WithValue(ctx, "org_id", args.OrgID)
 	}
-	
+
 	metricNames, warnings, err := tm.dependencies.HandlersManager.PrometheusClient.LabelValues(ctx, "__name__", []string{}, time.Now().Add(-time.Hour), time.Now())
 	if err != nil {
 		return mcp.NewToolResultError("failed to fetch metrics list: " + err.Error()), nil
