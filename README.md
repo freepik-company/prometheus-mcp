@@ -134,12 +134,24 @@ Prometheus MCP supports **dynamic multi-tenant queries**, allowing you to query 
 
 ### Configuration
 
-Set a **default tenant** in your config (optional):
+Set a **default tenant** and list of **available tenants** in your config:
 
 ```yaml
 prometheus:
   url: "http://mimir-gateway:8080/prometheus"
   org_id: "freepik-company"  # Default tenant
+  available_orgs:            # List of available tenants (shown in tool descriptions)
+    - freepik-company
+    - freepik-company-slx
+    - freepik-company-aime
+```
+
+When `available_orgs` is configured, AI agents will see these options in the tool description:
+
+```
+org_id: Optional tenant ID for multi-tenant Prometheus/Mimir. 
+        Default: 'freepik-company'. 
+        Available tenants: [freepik-company, freepik-company-slx, freepik-company-aime].
 ```
 
 ### Per-Query Tenant Override

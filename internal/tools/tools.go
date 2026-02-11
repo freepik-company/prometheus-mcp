@@ -1,6 +1,9 @@
 package tools
 
 import (
+	"fmt"
+	"strings"
+
 	"prometheus-mcp/internal/globals"
 	"prometheus-mcp/internal/handlers"
 	"prometheus-mcp/internal/middlewares"
@@ -28,7 +31,30 @@ func NewToolsManager(deps ToolsManagerDependencies) *ToolsManager {
 	}
 }
 
+// buildOrgIDDescription creates a dynamic description for org_id parameter
+// that includes the list of available tenants from config
+func (tm *ToolsManager) buildOrgIDDescription() string {
+	baseDesc := "Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header)."
+	
+	config := tm.dependencies.AppCtx.Config.Prometheus
+	
+	// Add default tenant info
+	if config.OrgID != "" {
+		baseDesc += fmt.Sprintf(" Default: '%s'.", config.OrgID)
+	}
+	
+	// Add available tenants if configured
+	if len(config.AvailableOrgs) > 0 {
+		baseDesc += fmt.Sprintf(" Available tenants: [%s].", strings.Join(config.AvailableOrgs, ", "))
+	}
+	
+	return baseDesc
+}
+
 func (tm *ToolsManager) AddTools() {
+
+	// Build dynamic org_id description with available tenants
+	orgIDDesc := tm.buildOrgIDDescription()
 
 	// 1. Prometheus query tool
 	tool := mcp.NewTool("prometheus_query",
@@ -41,7 +67,7 @@ func (tm *ToolsManager) AddTools() {
 			mcp.Description("Timestamp for the query (RFC3339 format). If not provided, uses current time"),
 		),
 		mcp.WithString("org_id",
-			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
+			mcp.Description(orgIDDesc),
 		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusQuery)
@@ -65,7 +91,7 @@ func (tm *ToolsManager) AddTools() {
 			mcp.Description("Step duration for the range query (e.g., '30s', '1m', '5m'). Defaults to '1m'"),
 		),
 		mcp.WithString("org_id",
-			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
+			mcp.Description(orgIDDesc),
 		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusRangeQuery)
@@ -77,7 +103,7 @@ func (tm *ToolsManager) AddTools() {
 			mcp.Description("Optional glob pattern to filter metrics (e.g., 'redis*', '*cpu*')"),
 		),
 		mcp.WithString("org_id",
-			mcp.Description("Optional tenant ID for multi-tenant Prometheus/Mimir (X-Scope-OrgId header). If not provided, uses the default tenant from config"),
+			mcp.Description(orgIDDesc),
 		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusListMetrics)
