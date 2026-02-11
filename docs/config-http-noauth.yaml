@@ -36,6 +36,10 @@ middleware:
 prometheus:
   url: "http://localhost:8080/prometheus"
   org_id: "freepik-company"
+  available_orgs:
+    - freepik-company
+    - freepik-company-slx
+    - freepik-company-aime
 
 oauth_authorization_server:
   enabled: false

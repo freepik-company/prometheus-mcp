@@ -128,6 +128,75 @@ prometheus:
     token: "glc_eyJrIjoiN3..."  # Grafana Cloud API Key
 ```
 
+## Multi-Tenant Support
+
+Prometheus MCP supports **dynamic multi-tenant queries**, allowing you to query different tenants on-demand without restarting the server.
+
+### Configuration
+
+Set a **default tenant** and list of **available tenants** in your config:
+
+```yaml
+prometheus:
+  url: "http://mimir-gateway:8080/prometheus"
+  org_id: "freepik-company"  # Default tenant
+  available_orgs:            # List of available tenants (shown in tool descriptions)
+    - freepik-company
+    - freepik-company-slx
+    - freepik-company-aime
+```
+
+When `available_orgs` is configured, AI agents will see these options in the tool description:
+
+```
+org_id: Optional tenant ID for multi-tenant Prometheus/Mimir. 
+        Default: 'freepik-company'. 
+        Available tenants: [freepik-company, freepik-company-slx, freepik-company-aime].
+```
+
+### Per-Query Tenant Override
+
+Override the tenant for specific queries using the `org_id` parameter:
+
+```json
+{
+  "query": "slx:istio_5xx_www_freepik_com",
+  "org_id": "freepik-company-slx"  // Query this tenant instead of default
+}
+```
+
+### Behavior
+
+- **Default tenant**: Uses `org_id` from config if no `org_id` is provided in the query
+- **Explicit tenant**: Uses `org_id` from query parameter, overriding the config
+- **No tenant**: If neither config nor query provides `org_id`, no `X-Scope-OrgId` header is sent
+
+### Use Cases
+
+1. **SLO/SLI Metrics in Separate Tenant:**
+   ```json
+   {
+     "query": "slx_error_budget:remaining",
+     "org_id": "freepik-company-slx"
+   }
+   ```
+
+2. **Regular Metrics:**
+   ```json
+   {
+     "query": "up"
+     // Uses default tenant from config
+   }
+   ```
+
+3. **Multiple Teams/Environments:**
+   ```json
+   {
+     "query": "cpu_usage",
+     "org_id": "team-backend"
+   }
+   ```
+
 ## Available MCP Tools
 
 ### 1. `prometheus_query`
@@ -137,12 +206,21 @@ Execute instant PromQL queries against Prometheus.
 **Parameters:**
 - `query` (required): PromQL query to execute
 - `time` (optional): Timestamp in RFC3339 format. Uses current time if not provided
+- `org_id` (optional): Tenant ID for multi-tenant setups. Overrides the default tenant from config
 
 **Example:**
 ```json
 {
   "query": "up",
   "time": "2024-01-15T10:30:00Z"
+}
+```
+
+**Multi-tenant example:**
+```json
+{
+  "query": "slx:istio_5xx_www_freepik_com",
+  "org_id": "freepik-company-slx"
 }
 ```
 
@@ -155,6 +233,7 @@ Execute PromQL range queries against Prometheus.
 - `start` (required): Start time in RFC3339 format
 - `end` (required): End time in RFC3339 format
 - `step` (optional): Step duration (e.g., "30s", "1m", "5m"). Defaults to "1m"
+- `org_id` (optional): Tenant ID for multi-tenant setups. Overrides the default tenant from config
 
 **Example:**
 ```json
@@ -166,12 +245,39 @@ Execute PromQL range queries against Prometheus.
 }
 ```
 
+**Multi-tenant example:**
+```json
+{
+  "query": "slx_sli:current{sloth_service=\"istio-www-freepik-com\"}",
+  "start": "2024-01-15T10:00:00Z",
+  "end": "2024-01-15T11:00:00Z",
+  "step": "5m",
+  "org_id": "freepik-company-slx"
+}
+```
+
 ### 3. `prometheus_list_metrics`
 
 List all available metrics from Prometheus.
 
 **Parameters:**
-None.
+- `query` (optional): Glob pattern to filter metrics (e.g., 'redis*', '*cpu*')
+- `org_id` (optional): Tenant ID for multi-tenant setups. Overrides the default tenant from config
+
+**Example:**
+```json
+{
+  "query": "slx:*"
+}
+```
+
+**Multi-tenant example:**
+```json
+{
+  "query": "slx:*",
+  "org_id": "freepik-company-slx"
+}
+```
 
 **Example Response:**
 ```json

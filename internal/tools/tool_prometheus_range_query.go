@@ -17,6 +17,7 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		Start string `json:"start"`
 		End   string `json:"end"`
 		Step  string `json:"step,omitempty"`
+		OrgID string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -58,8 +59,8 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		}
 	}
 
-	// Execute range query
-	result, err := tm.dependencies.HandlersManager.QueryRangePrometheus(ctx, args.Query, startTime, endTime, step)
+	// Execute range query with optional org_id override
+	result, err := tm.dependencies.HandlersManager.QueryRangePrometheus(ctx, args.Query, startTime, endTime, step, args.OrgID)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute Prometheus range query: " + err.Error()), nil
 	}

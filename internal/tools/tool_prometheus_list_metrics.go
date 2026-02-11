@@ -20,6 +20,7 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 	// Parse arguments
 	var args struct {
 		Query string `json:"query,omitempty"`
+		OrgID string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -38,6 +39,11 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 	}
 
 	// Get label values for __name__ which contains all metric names
+	// Add org_id to context if provided
+	if args.OrgID != "" {
+		ctx = context.WithValue(ctx, "org_id", args.OrgID)
+	}
+
 	metricNames, warnings, err := tm.dependencies.HandlersManager.PrometheusClient.LabelValues(ctx, "__name__", []string{}, time.Now().Add(-time.Hour), time.Now())
 	if err != nil {
 		return mcp.NewToolResultError("failed to fetch metrics list: " + err.Error()), nil

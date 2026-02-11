@@ -92,10 +92,11 @@ type PrometheusAuthConfig struct {
 
 // PrometheusConfig represents the Prometheus client configuration
 type PrometheusConfig struct {
-	URL     string               `yaml:"url"`
-	Timeout string               `yaml:"timeout,omitempty"`
-	OrgID   string               `yaml:"org_id,omitempty"` // X-Scope-OrgId header for multi-tenant
-	Auth    PrometheusAuthConfig `yaml:"auth,omitempty"`
+	URL           string               `yaml:"url"`
+	Timeout       string               `yaml:"timeout,omitempty"`
+	OrgID         string               `yaml:"org_id,omitempty"`         // Default X-Scope-OrgId header for multi-tenant
+	AvailableOrgs []string             `yaml:"available_orgs,omitempty"` // List of available tenant IDs for tool descriptions
+	Auth          PrometheusAuthConfig `yaml:"auth,omitempty"`
 }
 
 // Configuration represents the complete configuration structure
