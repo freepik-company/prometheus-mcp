@@ -11,13 +11,11 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// HandleToolPrometheusListMetrics handles listing available metrics
 func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if tm.dependencies.HandlersManager.PrometheusClient == nil {
 		return mcp.NewToolResultError("Prometheus client not initialized"), nil
 	}
 
-	// Parse arguments
 	var args struct {
 		Query  string `json:"query,omitempty"`
 		OrgID  string `json:"org_id,omitempty"`
@@ -33,25 +31,19 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		return mcp.NewToolResultError("failed to parse arguments: " + err.Error()), nil
 	}
 
-	// Set default limit
 	if args.Limit <= 0 {
 		args.Limit = defaultMetricsLimit
 	}
-
-	// Validate offset
 	if args.Offset < 0 {
 		args.Offset = 0
 	}
 
-	// Validate glob pattern if provided
 	if args.Query != "" {
 		if _, err := filepath.Match(args.Query, ""); err != nil {
 			return mcp.NewToolResultError("invalid glob pattern: " + err.Error()), nil
 		}
 	}
 
-	// Get label values for __name__ which contains all metric names
-	// Add org_id to context if provided
 	if args.OrgID != "" {
 		ctx = context.WithValue(ctx, "org_id", args.OrgID)
 	}
@@ -65,7 +57,6 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		tm.dependencies.AppCtx.Logger.Warn("Prometheus list metrics warnings", "warnings", warnings)
 	}
 
-	// Format the result, applying filter if query is provided
 	var filtered []string
 	for _, name := range metricNames {
 		if args.Query == "" {
@@ -75,7 +66,6 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		}
 	}
 
-	// Apply pagination
 	totalFiltered := len(filtered)
 	start := args.Offset
 	end := args.Offset + args.Limit
@@ -90,7 +80,6 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 	paginatedResult := filtered[start:end]
 	hasMore := end < totalFiltered
 
-	// Convert to JSON for better formatting
 	resultTOON, err := gotoon.Encode(map[string]interface{}{
 		"total_metrics": totalFiltered,
 		"returned":      len(paginatedResult),

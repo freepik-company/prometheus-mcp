@@ -10,7 +10,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// HandleToolPrometheusRangeQuery handles range Prometheus queries
 func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
 		Query string `json:"query"`
@@ -38,7 +37,6 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		return mcp.NewToolResultError("end parameter is required"), nil
 	}
 
-	// Parse timestamps
 	startTime, err := time.Parse(time.RFC3339, args.Start)
 	if err != nil {
 		return mcp.NewToolResultError("invalid start time format, use RFC3339: " + err.Error()), nil
@@ -50,8 +48,7 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		return mcp.NewToolResultError("invalid end time format, use RFC3339: " + err.Error()), nil
 	}
 
-	// Parse step duration, default to 1 minute
-	step := 1 * time.Minute
+	step := time.Minute
 	if args.Step != "" {
 		step, err = time.ParseDuration(args.Step)
 		if err != nil {
@@ -59,13 +56,11 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		}
 	}
 
-	// Execute range query with optional org_id override
 	result, err := tm.dependencies.HandlersManager.QueryRangePrometheus(ctx, args.Query, startTime, endTime, step, args.OrgID)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute Prometheus range query: " + err.Error()), nil
 	}
 
-	// Convert result to JSON
 	resultTOON, err := gotoon.Encode(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil

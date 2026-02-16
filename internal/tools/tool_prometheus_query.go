@@ -10,7 +10,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// HandleToolPrometheusQuery handles instant Prometheus queries
 func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
 		Query string `json:"query"`
@@ -30,7 +29,6 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		return mcp.NewToolResultError("query parameter is required"), nil
 	}
 
-	// Parse timestamp, default to now if not provided
 	var timestamp time.Time
 	if args.Time != "" {
 		timestamp, err = time.Parse(time.RFC3339, args.Time)
@@ -41,13 +39,11 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		timestamp = time.Now()
 	}
 
-	// Execute query with optional org_id override
 	result, err := tm.dependencies.HandlersManager.QueryPrometheus(ctx, args.Query, timestamp, args.OrgID)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute Prometheus query: " + err.Error()), nil
 	}
 
-	// Convert result to JSON
 	resultTOON, err := gotoon.Encode(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil

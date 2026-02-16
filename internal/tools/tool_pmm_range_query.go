@@ -10,7 +10,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// HandleToolPMMRangeQuery handles range PMM queries (VictoriaMetrics/PromQL compatible)
 func (tm *ToolsManager) HandleToolPMMRangeQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
 		Query string `json:"query"`
@@ -37,7 +36,6 @@ func (tm *ToolsManager) HandleToolPMMRangeQuery(ctx context.Context, request mcp
 		return mcp.NewToolResultError("end parameter is required"), nil
 	}
 
-	// Parse timestamps
 	startTime, err := time.Parse(time.RFC3339, args.Start)
 	if err != nil {
 		return mcp.NewToolResultError("invalid start time format, use RFC3339: " + err.Error()), nil
@@ -49,8 +47,7 @@ func (tm *ToolsManager) HandleToolPMMRangeQuery(ctx context.Context, request mcp
 		return mcp.NewToolResultError("invalid end time format, use RFC3339: " + err.Error()), nil
 	}
 
-	// Parse step duration, default to 1 minute
-	step := 1 * time.Minute
+	step := time.Minute
 	if args.Step != "" {
 		step, err = time.ParseDuration(args.Step)
 		if err != nil {
@@ -58,13 +55,11 @@ func (tm *ToolsManager) HandleToolPMMRangeQuery(ctx context.Context, request mcp
 		}
 	}
 
-	// Execute range query against PMM
 	result, err := tm.dependencies.HandlersManager.QueryRangePMM(ctx, args.Query, startTime, endTime, step)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute PMM range query: " + err.Error()), nil
 	}
 
-	// Convert result to JSON
 	resultTOON, err := gotoon.Encode(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil

@@ -10,7 +10,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// HandleToolPMMQuery handles instant PMM queries (VictoriaMetrics/PromQL compatible)
 func (tm *ToolsManager) HandleToolPMMQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
 		Query string `json:"query"`
@@ -29,7 +28,6 @@ func (tm *ToolsManager) HandleToolPMMQuery(ctx context.Context, request mcp.Call
 		return mcp.NewToolResultError("query parameter is required"), nil
 	}
 
-	// Parse timestamp, default to now if not provided
 	var timestamp time.Time
 	if args.Time != "" {
 		timestamp, err = time.Parse(time.RFC3339, args.Time)
@@ -40,13 +38,11 @@ func (tm *ToolsManager) HandleToolPMMQuery(ctx context.Context, request mcp.Call
 		timestamp = time.Now()
 	}
 
-	// Execute query against PMM
 	result, err := tm.dependencies.HandlersManager.QueryPMM(ctx, args.Query, timestamp)
 	if err != nil {
 		return mcp.NewToolResultError("failed to execute PMM query: " + err.Error()), nil
 	}
 
-	// Convert result to JSON
 	resultTOON, err := gotoon.Encode(result)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
