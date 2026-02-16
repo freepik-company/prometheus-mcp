@@ -11,14 +11,15 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	if tm.dependencies.HandlersManager.PrometheusClient == nil {
-		return mcp.NewToolResultError("Prometheus client not initialized"), nil
+const defaultMetricsLimit = 100
+
+func (tm *ToolsManager) HandleToolPMMListMetrics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if tm.dependencies.HandlersManager.PMMClient == nil {
+		return mcp.NewToolResultError("PMM client not initialized"), nil
 	}
 
 	var args struct {
 		Query  string `json:"query,omitempty"`
-		OrgID  string `json:"org_id,omitempty"`
 		Limit  int    `json:"limit,omitempty"`
 		Offset int    `json:"offset,omitempty"`
 	}
@@ -44,17 +45,13 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		}
 	}
 
-	if args.OrgID != "" {
-		ctx = context.WithValue(ctx, "org_id", args.OrgID)
-	}
-
-	metricNames, warnings, err := tm.dependencies.HandlersManager.PrometheusClient.LabelValues(ctx, "__name__", []string{}, time.Now().Add(-time.Hour), time.Now())
+	metricNames, warnings, err := tm.dependencies.HandlersManager.PMMClient.LabelValues(ctx, "__name__", []string{}, time.Now().Add(-time.Hour), time.Now())
 	if err != nil {
-		return mcp.NewToolResultError("failed to fetch metrics list: " + err.Error()), nil
+		return mcp.NewToolResultError("failed to fetch PMM metrics list: " + err.Error()), nil
 	}
 
 	if len(warnings) > 0 {
-		tm.dependencies.AppCtx.Logger.Warn("Prometheus list metrics warnings", "warnings", warnings)
+		tm.dependencies.AppCtx.Logger.Warn("PMM list metrics warnings", "warnings", warnings)
 	}
 
 	var filtered []string
@@ -92,5 +89,5 @@ func (tm *ToolsManager) HandleToolPrometheusListMetrics(ctx context.Context, req
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Available Prometheus Metrics:\n\n%s", resultTOON)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Available PMM Metrics:\n\n%s", resultTOON)), nil
 }

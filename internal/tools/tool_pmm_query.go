@@ -10,11 +10,10 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (tm *ToolsManager) HandleToolPMMQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
 		Query string `json:"query"`
 		Time  string `json:"time,omitempty"`
-		OrgID string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -39,9 +38,9 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		timestamp = time.Now()
 	}
 
-	result, err := tm.dependencies.HandlersManager.QueryPrometheus(ctx, args.Query, timestamp, args.OrgID)
+	result, err := tm.dependencies.HandlersManager.QueryPMM(ctx, args.Query, timestamp)
 	if err != nil {
-		return mcp.NewToolResultError("failed to execute Prometheus query: " + err.Error()), nil
+		return mcp.NewToolResultError("failed to execute PMM query: " + err.Error()), nil
 	}
 
 	resultTOON, err := gotoon.Encode(result)
@@ -49,6 +48,6 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Prometheus Query Results:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
+	return mcp.NewToolResultText(fmt.Sprintf("PMM Query Results:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
 		args.Query, timestamp.Format(time.RFC3339), resultTOON)), nil
 }

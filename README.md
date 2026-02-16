@@ -49,39 +49,59 @@ Add Prometheus configuration to your `config.yaml`:
 
 ```yaml
 prometheus:
-  url: "http://localhost:9090"     # Prometheus server URL
-  timeout: "30s"                   # Optional request timeout
+  url: "http://localhost:9090"
 ```
 
 ### Advanced Configuration with Authentication
 
+#### Using Environment Variables (Recommended for Secrets)
+
+For security, use environment variables for sensitive credentials:
+
 ```yaml
 prometheus:
-  url: "https://prometheus.company.com"
-  timeout: "30s"
-  org_id: "tenant-1"               # X-Scope-OrgId header for multi-tenant systems
+  url: "https://prometheus.example.com"
+  org_id: "tenant-1"
   auth:
-    type: "basic"                  # Types: "basic", "token", or empty for no auth
-    username: "prometheus-user"    # Username for basic auth
-    password: "secret-password"    # Password for basic auth
+    type: "basic"
+    username: "prometheus-user"
+    password: "${PROMETHEUS_PASSWORD}"  # Expands from environment variable
+```
+
+Both `${VAR}` and `$VAR` syntaxes are supported. Set the environment variable before starting the server:
+
+```bash
+export PROMETHEUS_PASSWORD="secret-password"
+./prometheus-mcp --config config.yaml
+```
+
+#### Hardcoded Credentials (Not Recommended for Production)
+
+```yaml
+prometheus:
+  url: "https://prometheus.example.com"
+  org_id: "tenant-1"
+  auth:
+    type: "basic"
+    username: "prometheus-user"
+    password: "secret-password"
 ```
 
 ### Bearer Token Configuration
 
 ```yaml
 prometheus:
-  url: "https://prometheus.company.com"
-  timeout: "30s"
-  org_id: "my-org-123"
+  url: "https://prometheus.example.com"
+  org_id: "my-org"
   auth:
     type: "token"
-    token: "eyJhbGciOiJIUzI1NiIs..."  # JWT or API token
+    token: "${PROMETHEUS_TOKEN}"
 ```
 
 ### Configuration Options
 
 - **`url`** (required): Prometheus server URL
-- **`timeout`** (optional): Request timeout (e.g., "30s", "1m")
+
 - **`org_id`** (optional): Value for `X-Scope-OrgId` header, useful for:
   - Cortex multi-tenant deployments
   - Thanos with tenant isolation
@@ -139,19 +159,19 @@ Set a **default tenant** and list of **available tenants** in your config:
 ```yaml
 prometheus:
   url: "http://mimir-gateway:8080/prometheus"
-  org_id: "freepik-company"  # Default tenant
-  available_orgs:            # List of available tenants (shown in tool descriptions)
-    - freepik-company
-    - freepik-company-slx
-    - freepik-company-aime
+  org_id: "my-company"
+  available_orgs:
+    - my-company
+    - my-company-slo
+    - my-company-dev
 ```
 
 When `available_orgs` is configured, AI agents will see these options in the tool description:
 
 ```
 org_id: Optional tenant ID for multi-tenant Prometheus/Mimir. 
-        Default: 'freepik-company'. 
-        Available tenants: [freepik-company, freepik-company-slx, freepik-company-aime].
+        Default: 'my-company'. 
+        Available tenants: [my-company, my-company-slo, my-company-dev].
 ```
 
 ### Per-Query Tenant Override
@@ -160,8 +180,8 @@ Override the tenant for specific queries using the `org_id` parameter:
 
 ```json
 {
-  "query": "slx:istio_5xx_www_freepik_com",
-  "org_id": "freepik-company-slx"  // Query this tenant instead of default
+  "query": "http_requests_total",
+  "org_id": "my-company-slo"
 }
 ```
 
@@ -176,8 +196,8 @@ Override the tenant for specific queries using the `org_id` parameter:
 1. **SLO/SLI Metrics in Separate Tenant:**
    ```json
    {
-     "query": "slx_error_budget:remaining",
-     "org_id": "freepik-company-slx"
+     "query": "slo_error_budget:remaining",
+     "org_id": "my-company-slo"
    }
    ```
 
@@ -185,7 +205,6 @@ Override the tenant for specific queries using the `org_id` parameter:
    ```json
    {
      "query": "up"
-     // Uses default tenant from config
    }
    ```
 
@@ -219,8 +238,8 @@ Execute instant PromQL queries against Prometheus.
 **Multi-tenant example:**
 ```json
 {
-  "query": "slx:istio_5xx_www_freepik_com",
-  "org_id": "freepik-company-slx"
+  "query": "http_errors_total",
+  "org_id": "my-company-slo"
 }
 ```
 
@@ -248,11 +267,11 @@ Execute PromQL range queries against Prometheus.
 **Multi-tenant example:**
 ```json
 {
-  "query": "slx_sli:current{sloth_service=\"istio-www-freepik-com\"}",
+  "query": "slo_sli:current{service=\"api-gateway\"}",
   "start": "2024-01-15T10:00:00Z",
   "end": "2024-01-15T11:00:00Z",
   "step": "5m",
-  "org_id": "freepik-company-slx"
+  "org_id": "my-company-slo"
 }
 ```
 
@@ -267,15 +286,15 @@ List all available metrics from Prometheus.
 **Example:**
 ```json
 {
-  "query": "slx:*"
+  "query": "http_*"
 }
 ```
 
 **Multi-tenant example:**
 ```json
 {
-  "query": "slx:*",
-  "org_id": "freepik-company-slx"
+  "query": "slo_*",
+  "org_id": "my-company-slo"
 }
 ```
 
@@ -345,16 +364,11 @@ traffic, so your sessions are safe with it. It has been tested under heavy load 
    
    prometheus:
      url: "http://localhost:9090"
-     timeout: "30s"
    ```
 
 3. **Run the server:**
    ```bash
-   # Stdio mode (for local clients like Claude Desktop)
    ./bin/prometheus-mcp -config config.yaml
-   
-   # HTTP mode (for remote clients)
-   make run
    ```
 
 ### Development

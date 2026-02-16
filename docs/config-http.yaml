@@ -1,11 +1,31 @@
 # MCP Server Configuration
 server:
-  name: "MCP Forge"
-  version: "0.1.0"
+  name: "prometheus-mcp"
+  version: "1.0.0"
   transport:
     type: "http"
     http:
       host: ":8080"
+
+# Prometheus Configuration (Grafana Mimir/Cortex compatible)
+prometheus:
+  url: "http://mimir-gateway.monitoring.svc.cluster.local/prometheus"
+  org_id: "default-tenant"
+  available_orgs:
+    - default-tenant
+    - tenant-dev
+  # auth:
+  #   type: "basic"
+  #   username: "user"
+  #   password: "${PROMETHEUS_PASSWORD}"
+
+# PMM Configuration (Percona Monitoring and Management - VictoriaMetrics backend)
+pmm:
+  url: "http://pmm.monitoring.svc.cluster.local:8080"
+  # auth:
+  #   type: "basic"
+  #   username: "admin"
+  #   password: "${PMM_PASSWORD}"
 
 # Middleware Configuration
 middleware:

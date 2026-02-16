@@ -7,31 +7,24 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Marshal TODO
-func Marshal(config api.Configuration) (bytes []byte, err error) {
-	bytes, err = yaml.Marshal(config)
-	return bytes, err
+func Marshal(config api.Configuration) ([]byte, error) {
+	return yaml.Marshal(config)
 }
 
-// Unmarshal TODO
-func Unmarshal(bytes []byte) (config api.Configuration, err error) {
-	err = yaml.Unmarshal(bytes, &config)
+func Unmarshal(bytes []byte) (api.Configuration, error) {
+	var config api.Configuration
+	err := yaml.Unmarshal(bytes, &config)
 	return config, err
 }
 
-// ReadFile TODO
-func ReadFile(filepath string) (config api.Configuration, err error) {
-	var fileBytes []byte
-	fileBytes, err = os.ReadFile(filepath)
+// ReadFile reads and parses a configuration file, expanding environment variables.
+// Supports ${VAR} and $VAR syntax for environment variable expansion.
+func ReadFile(filepath string) (api.Configuration, error) {
+	fileBytes, err := os.ReadFile(filepath)
 	if err != nil {
-		return config, err
+		return api.Configuration{}, err
 	}
 
-	// Expand environment variables present in the config
-	// This will cause expansion in the following way: field: "$FIELD" -> field: "value_of_field"
-	fileExpandedEnv := os.ExpandEnv(string(fileBytes))
-
-	config, err = Unmarshal([]byte(fileExpandedEnv))
-
-	return config, err
+	expandedContent := os.ExpandEnv(string(fileBytes))
+	return Unmarshal([]byte(expandedContent))
 }
