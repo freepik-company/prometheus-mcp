@@ -13,43 +13,19 @@ middleware:
   jwt:
     enabled: false
 
-# Ejemplo de configuración con autenticación básica y OrgID
-# prometheus:
-#   url: "http://localhost:9090"
-#   timeout: "30s"
-#   org_id: "tenant-1"  # Para sistemas multi-tenant como Cortex/Thanos
-#   auth:
-#     type: "basic"
-#     username: "prometheus-user"
-#     password: "${PROMETHEUS_PASSWORD}"  # Usa variables de entorno para seguridad
-#     # Sintaxis alternativa: password: "$PROMETHEUS_PASSWORD"
-
-# Ejemplo alternativo con token de autenticación:
-# prometheus:
-#   url: "https://prometheus.company.com"
-#   timeout: "30s" 
-#   org_id: "my-org-123"
-#   auth:
-#     type: "token"
-#     token: "${PROMETHEUS_TOKEN}"  # Token desde variable de entorno
-
-# Ejemplo sin autenticación (solo OrgID):
 prometheus:
-  url: "http://localhost:8085/prometheus"
-  org_id: "freepik-company"
+  url: "http://localhost:9090"
+  org_id: "my-tenant"
   available_orgs:
-    - freepik-company
-    - freepik-company-slx
-    - freepik-company-aime
+    - my-tenant
+    - my-tenant-dev
 
 pmm:
   url: "http://localhost:8080/prometheus"
-  timeout: "30s"
   auth:
     type: "basic"
-    username: "xxx"
+    username: "admin"
     password: "${PMM_PASSWORD}"
-
 
 oauth_authorization_server:
   enabled: false

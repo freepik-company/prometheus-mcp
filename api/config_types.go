@@ -93,21 +93,16 @@ type AuthConfig struct {
 // PrometheusAuthConfig is an alias for backward compatibility
 type PrometheusAuthConfig = AuthConfig
 
-// PrometheusConfig represents the Prometheus client configuration
 type PrometheusConfig struct {
 	URL           string     `yaml:"url"`
-	Timeout       string     `yaml:"timeout,omitempty"`
-	OrgID         string     `yaml:"org_id,omitempty"`         // Default X-Scope-OrgId header for multi-tenant
-	AvailableOrgs []string   `yaml:"available_orgs,omitempty"` // List of available tenant IDs for tool descriptions
+	OrgID         string     `yaml:"org_id,omitempty"`
+	AvailableOrgs []string   `yaml:"available_orgs,omitempty"`
 	Auth          AuthConfig `yaml:"auth,omitempty"`
 }
 
-// PMMConfig represents the PMM (Percona Monitoring and Management) client configuration
-// PMM uses VictoriaMetrics internally which is compatible with Prometheus API
 type PMMConfig struct {
-	URL     string     `yaml:"url"`
-	Timeout string     `yaml:"timeout,omitempty"`
-	Auth    AuthConfig `yaml:"auth,omitempty"`
+	URL  string     `yaml:"url"`
+	Auth AuthConfig `yaml:"auth,omitempty"`
 }
 
 // Configuration represents the complete configuration structure

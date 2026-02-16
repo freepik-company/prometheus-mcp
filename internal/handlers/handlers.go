@@ -40,23 +40,15 @@ func (hm *HandlersManager) initPrometheusClient(deps HandlersManagerDependencies
 		return
 	}
 
-	httpClient := &http.Client{Transport: &prometheusTransport{
+	transport := &prometheusTransport{
 		transport: &http.Transport{},
 		config:    &deps.AppCtx.Config.Prometheus,
 		logger:    deps.AppCtx.Logger,
-	}}
-
-	if deps.AppCtx.Config.Prometheus.Timeout != "" {
-		if timeout, err := time.ParseDuration(deps.AppCtx.Config.Prometheus.Timeout); err == nil {
-			httpClient.Timeout = timeout
-		} else {
-			deps.AppCtx.Logger.Warn("invalid prometheus timeout, using default", "timeout", deps.AppCtx.Config.Prometheus.Timeout, "error", err.Error())
-		}
 	}
 
 	client, err := prometheusapi.NewClient(prometheusapi.Config{
 		Address:      deps.AppCtx.Config.Prometheus.URL,
-		RoundTripper: httpClient.Transport,
+		RoundTripper: transport,
 	})
 	if err != nil {
 		deps.AppCtx.Logger.Error("failed to create Prometheus client", "error", err.Error())
@@ -75,23 +67,15 @@ func (hm *HandlersManager) initPMMClient(deps HandlersManagerDependencies) {
 		return
 	}
 
-	httpClient := &http.Client{Transport: &pmmTransport{
+	transport := &pmmTransport{
 		transport: &http.Transport{},
 		config:    &deps.AppCtx.Config.PMM,
 		logger:    deps.AppCtx.Logger,
-	}}
-
-	if deps.AppCtx.Config.PMM.Timeout != "" {
-		if timeout, err := time.ParseDuration(deps.AppCtx.Config.PMM.Timeout); err == nil {
-			httpClient.Timeout = timeout
-		} else {
-			deps.AppCtx.Logger.Warn("invalid PMM timeout, using default", "timeout", deps.AppCtx.Config.PMM.Timeout, "error", err.Error())
-		}
 	}
 
 	client, err := prometheusapi.NewClient(prometheusapi.Config{
 		Address:      deps.AppCtx.Config.PMM.URL,
-		RoundTripper: httpClient.Transport,
+		RoundTripper: transport,
 	})
 	if err != nil {
 		deps.AppCtx.Logger.Error("failed to create PMM client", "error", err.Error())
