@@ -47,9 +47,8 @@ pmm:
   timeout: "30s"
   auth:
     type: "basic"
-    username: "admin"
-    password: "${PMM_PASSWORD}"  # Usa variables de entorno para seguridad
-    # Sintaxis alternativa: password: "$PMM_PASSWORD"
+    username: "xxx"
+    password: "${PMM_PASSWORD}"
 
 
 oauth_authorization_server:
