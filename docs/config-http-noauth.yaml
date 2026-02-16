@@ -21,7 +21,8 @@ middleware:
 #   auth:
 #     type: "basic"
 #     username: "prometheus-user"
-#     password: "secret-password"
+#     password: "${PROMETHEUS_PASSWORD}"  # Usa variables de entorno para seguridad
+#     # Sintaxis alternativa: password: "$PROMETHEUS_PASSWORD"
 
 # Ejemplo alternativo con token de autenticación:
 # prometheus:
@@ -30,16 +31,26 @@ middleware:
 #   org_id: "my-org-123"
 #   auth:
 #     type: "token"
-#     token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+#     token: "${PROMETHEUS_TOKEN}"  # Token desde variable de entorno
 
 # Ejemplo sin autenticación (solo OrgID):
 prometheus:
-  url: "http://localhost:8080/prometheus"
+  url: "http://localhost:8085/prometheus"
   org_id: "freepik-company"
   available_orgs:
     - freepik-company
     - freepik-company-slx
     - freepik-company-aime
+
+pmm:
+  url: "http://localhost:8080/prometheus"
+  timeout: "30s"
+  auth:
+    type: "basic"
+    username: "admin"
+    password: "${PMM_PASSWORD}"  # Usa variables de entorno para seguridad
+    # Sintaxis alternativa: password: "$PMM_PASSWORD"
+
 
 oauth_authorization_server:
   enabled: false

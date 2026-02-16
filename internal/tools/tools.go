@@ -105,6 +105,61 @@ func (tm *ToolsManager) AddTools() {
 		mcp.WithString("org_id",
 			mcp.Description(orgIDDesc),
 		),
+		mcp.WithNumber("limit",
+			mcp.Description("Maximum number of metrics to return. Defaults to 100."),
+		),
+		mcp.WithNumber("offset",
+			mcp.Description("Number of metrics to skip for pagination. Defaults to 0."),
+		),
 	)
 	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPrometheusListMetrics)
+
+	// 4. PMM query tool (Percona Monitoring and Management - VictoriaMetrics compatible)
+	tool = mcp.NewTool("pmm_query",
+		mcp.WithDescription("Execute a PromQL/MetricsQL query against PMM (Percona Monitoring and Management). PMM uses VictoriaMetrics internally for database metrics monitoring."),
+		mcp.WithString("query",
+			mcp.Required(),
+			mcp.Description("The PromQL/MetricsQL query to execute"),
+		),
+		mcp.WithString("time",
+			mcp.Description("Timestamp for the query (RFC3339 format). If not provided, uses current time"),
+		),
+	)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPMMQuery)
+
+	// 5. PMM range query tool
+	tool = mcp.NewTool("pmm_range_query",
+		mcp.WithDescription("Execute a PromQL/MetricsQL range query against PMM (Percona Monitoring and Management). PMM uses VictoriaMetrics internally for database metrics monitoring."),
+		mcp.WithString("query",
+			mcp.Required(),
+			mcp.Description("The PromQL/MetricsQL query to execute"),
+		),
+		mcp.WithString("start",
+			mcp.Required(),
+			mcp.Description("Start time for the range query (RFC3339 format)"),
+		),
+		mcp.WithString("end",
+			mcp.Required(),
+			mcp.Description("End time for the range query (RFC3339 format)"),
+		),
+		mcp.WithString("step",
+			mcp.Description("Step duration for the range query (e.g., '30s', '1m', '5m'). Defaults to '1m'"),
+		),
+	)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPMMRangeQuery)
+
+	// 6. PMM metrics list tool
+	tool = mcp.NewTool("pmm_list_metrics",
+		mcp.WithDescription("List all available metrics from PMM (Percona Monitoring and Management). Useful for discovering database-related metrics like MySQL, PostgreSQL, MongoDB exporters."),
+		mcp.WithString("query",
+			mcp.Description("Optional glob pattern to filter metrics (e.g., 'mysql*', '*mongo*', 'pg_*')"),
+		),
+		mcp.WithNumber("limit",
+			mcp.Description("Maximum number of metrics to return. Defaults to 100."),
+		),
+		mcp.WithNumber("offset",
+			mcp.Description("Number of metrics to skip for pagination. Defaults to 0."),
+		),
+	)
+	tm.dependencies.McpServer.AddTool(tool, tm.HandleToolPMMListMetrics)
 }

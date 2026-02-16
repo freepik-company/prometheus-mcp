@@ -82,21 +82,32 @@ type OAuthProtectedResourceConfig struct {
 	DPoPBoundAccessTokensRequired         bool     `yaml:"dpop_bound_access_tokens_required,omitempty"`
 }
 
-// PrometheusAuthConfig represents authentication configuration for Prometheus
-type PrometheusAuthConfig struct {
+// AuthConfig represents authentication configuration for metrics backends
+type AuthConfig struct {
 	Type     string `yaml:"type,omitempty"`     // "basic", "token", or empty for no auth
 	Username string `yaml:"username,omitempty"` // For basic auth
 	Password string `yaml:"password,omitempty"` // For basic auth
 	Token    string `yaml:"token,omitempty"`    // For bearer token auth
 }
 
+// PrometheusAuthConfig is an alias for backward compatibility
+type PrometheusAuthConfig = AuthConfig
+
 // PrometheusConfig represents the Prometheus client configuration
 type PrometheusConfig struct {
-	URL           string               `yaml:"url"`
-	Timeout       string               `yaml:"timeout,omitempty"`
-	OrgID         string               `yaml:"org_id,omitempty"`         // Default X-Scope-OrgId header for multi-tenant
-	AvailableOrgs []string             `yaml:"available_orgs,omitempty"` // List of available tenant IDs for tool descriptions
-	Auth          PrometheusAuthConfig `yaml:"auth,omitempty"`
+	URL           string     `yaml:"url"`
+	Timeout       string     `yaml:"timeout,omitempty"`
+	OrgID         string     `yaml:"org_id,omitempty"`         // Default X-Scope-OrgId header for multi-tenant
+	AvailableOrgs []string   `yaml:"available_orgs,omitempty"` // List of available tenant IDs for tool descriptions
+	Auth          AuthConfig `yaml:"auth,omitempty"`
+}
+
+// PMMConfig represents the PMM (Percona Monitoring and Management) client configuration
+// PMM uses VictoriaMetrics internally which is compatible with Prometheus API
+type PMMConfig struct {
+	URL     string     `yaml:"url"`
+	Timeout string     `yaml:"timeout,omitempty"`
+	Auth    AuthConfig `yaml:"auth,omitempty"`
 }
 
 // Configuration represents the complete configuration structure
@@ -106,4 +117,5 @@ type Configuration struct {
 	OAuthAuthorizationServer OAuthAuthorizationServer     `yaml:"oauth_authorization_server,omitempty"`
 	OAuthProtectedResource   OAuthProtectedResourceConfig `yaml:"oauth_protected_resource,omitempty"`
 	Prometheus               PrometheusConfig             `yaml:"prometheus,omitempty"`
+	PMM                      PMMConfig                    `yaml:"pmm,omitempty"`
 }

@@ -55,6 +55,31 @@ prometheus:
 
 ### Advanced Configuration with Authentication
 
+#### Using Environment Variables (Recommended for Secrets)
+
+For security, use environment variables for sensitive credentials:
+
+```yaml
+prometheus:
+  url: "https://prometheus.company.com"
+  timeout: "30s"
+  org_id: "tenant-1"
+  auth:
+    type: "basic"
+    username: "prometheus-user"
+    password: "${PROMETHEUS_PASSWORD}"  # Expands from environment variable
+    # Alternative syntax: password: "$PROMETHEUS_PASSWORD"
+```
+
+Both `${VAR}` and `$VAR` syntaxes are supported. Set the environment variable before starting the server:
+
+```bash
+export PROMETHEUS_PASSWORD="secret-password"
+./prometheus-mcp --config config.yaml
+```
+
+#### Hardcoded Credentials (Not Recommended for Production)
+
 ```yaml
 prometheus:
   url: "https://prometheus.company.com"
@@ -75,7 +100,7 @@ prometheus:
   org_id: "my-org-123"
   auth:
     type: "token"
-    token: "eyJhbGciOiJIUzI1NiIs..."  # JWT or API token
+    token: "${PROMETHEUS_TOKEN}"  # Token from environment variable
 ```
 
 ### Configuration Options

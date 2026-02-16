@@ -12,10 +12,15 @@ import (
 	"prometheus-mcp/internal/tools"
 
 	//
+	"github.com/joho/godotenv"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
+
+	// Load .env file if it exists (for local development)
+	// This is optional and will not fail if .env doesn't exist
+	_ = godotenv.Load()
 
 	// 0. Process the configuration
 	appCtx, err := globals.NewApplicationContext()
