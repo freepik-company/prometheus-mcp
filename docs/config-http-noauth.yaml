@@ -4,7 +4,7 @@ server:
   transport:
     type: "http"
     http:
-      host: "0.0.0.0:8081"
+      host: "0.0.0.0:8080"
 
 middleware:
   access_logs:
@@ -13,19 +13,20 @@ middleware:
   jwt:
     enabled: false
 
-prometheus:
-  url: "http://localhost:9090"
-  org_id: "my-tenant"
-  available_orgs:
-    - my-tenant
-    - my-tenant-dev
+backends:
+  prometheus:
+    url: "http://localhost:9090"
+    org_id: "my-tenant"
+    available_orgs:
+      - my-tenant
+      - my-tenant-dev
 
-pmm:
-  url: "http://localhost:8080/prometheus"
-  auth:
-    type: "basic"
-    username: "admin"
-    password: "${PMM_PASSWORD}"
+  pmm:
+    url: "http://localhost:8080/prometheus"
+    auth:
+      type: "basic"
+      username: "admin"
+      password: "${PMM_PASSWORD}"
 
 oauth_authorization_server:
   enabled: false

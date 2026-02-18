@@ -19,99 +19,88 @@ type HandlersManagerDependencies struct {
 }
 
 type HandlersManager struct {
-	dependencies     HandlersManagerDependencies
-	PrometheusClient v1.API
-	PMMClient        v1.API
+	dependencies HandlersManagerDependencies
+	Clients      map[string]v1.API
 }
 
 func NewHandlersManager(deps HandlersManagerDependencies) *HandlersManager {
 	hm := &HandlersManager{
 		dependencies: deps,
+		Clients:      make(map[string]v1.API),
 	}
 
-	hm.initPrometheusClient(deps)
-	hm.initPMMClient(deps)
+	hm.initClients(deps)
 
 	return hm
 }
 
-func (hm *HandlersManager) initPrometheusClient(deps HandlersManagerDependencies) {
-	if deps.AppCtx.Config.Prometheus.URL == "" {
-		return
-	}
+func (hm *HandlersManager) initClients(deps HandlersManagerDependencies) {
+	for name, backendCfg := range deps.AppCtx.Config.Backends {
+		if backendCfg.URL == "" {
+			deps.AppCtx.Logger.Warn("Backend has no URL configured, skipping", "backend", name)
+			continue
+		}
 
-	transport := &prometheusTransport{
-		transport: &http.Transport{},
-		config:    &deps.AppCtx.Config.Prometheus,
-		logger:    deps.AppCtx.Logger,
-	}
+		cfgCopy := backendCfg
+		transport := &backendTransport{
+			transport: &http.Transport{},
+			config:    &cfgCopy,
+			logger:    deps.AppCtx.Logger,
+			name:      name,
+		}
 
-	client, err := prometheusapi.NewClient(prometheusapi.Config{
-		Address:      deps.AppCtx.Config.Prometheus.URL,
-		RoundTripper: transport,
-	})
-	if err != nil {
-		deps.AppCtx.Logger.Error("failed to create Prometheus client", "error", err.Error())
-		return
-	}
+		client, err := prometheusapi.NewClient(prometheusapi.Config{
+			Address:      backendCfg.URL,
+			RoundTripper: transport,
+		})
+		if err != nil {
+			deps.AppCtx.Logger.Error("Failed to create client", "backend", name, "error", err.Error())
+			continue
+		}
 
-	hm.PrometheusClient = v1.NewAPI(client)
-	deps.AppCtx.Logger.Info("Prometheus client initialized",
-		"url", deps.AppCtx.Config.Prometheus.URL,
-		"auth_type", deps.AppCtx.Config.Prometheus.Auth.Type,
-		"org_id", deps.AppCtx.Config.Prometheus.OrgID)
+		hm.Clients[name] = v1.NewAPI(client)
+		deps.AppCtx.Logger.Info("Backend client initialized",
+			"backend", name,
+			"url", backendCfg.URL,
+			"auth_type", backendCfg.Auth.Type,
+			"org_id", backendCfg.OrgID)
+	}
 }
 
-func (hm *HandlersManager) initPMMClient(deps HandlersManagerDependencies) {
-	if deps.AppCtx.Config.PMM.URL == "" {
-		return
+func (hm *HandlersManager) GetClient(backendName string) (v1.API, error) {
+	client, ok := hm.Clients[backendName]
+	if !ok {
+		return nil, fmt.Errorf("backend %q not initialized", backendName)
 	}
-
-	transport := &pmmTransport{
-		transport: &http.Transport{},
-		config:    &deps.AppCtx.Config.PMM,
-		logger:    deps.AppCtx.Logger,
-	}
-
-	client, err := prometheusapi.NewClient(prometheusapi.Config{
-		Address:      deps.AppCtx.Config.PMM.URL,
-		RoundTripper: transport,
-	})
-	if err != nil {
-		deps.AppCtx.Logger.Error("failed to create PMM client", "error", err.Error())
-		return
-	}
-
-	hm.PMMClient = v1.NewAPI(client)
-	deps.AppCtx.Logger.Info("PMM client initialized",
-		"url", deps.AppCtx.Config.PMM.URL,
-		"auth_type", deps.AppCtx.Config.PMM.Auth.Type)
+	return client, nil
 }
 
-func (hm *HandlersManager) QueryPrometheus(ctx context.Context, query string, timestamp time.Time, orgID string) (interface{}, error) {
-	if hm.PrometheusClient == nil {
-		return nil, fmt.Errorf("prometheus client not initialized")
+func (hm *HandlersManager) Query(ctx context.Context, backendName string, query string, timestamp time.Time, orgID string) (interface{}, error) {
+	client, err := hm.GetClient(backendName)
+	if err != nil {
+		return nil, err
 	}
 
 	if orgID != "" {
 		ctx = context.WithValue(ctx, "org_id", orgID)
 	}
 
-	result, warnings, err := hm.PrometheusClient.Query(ctx, query, timestamp)
+	result, warnings, err := client.Query(ctx, query, timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("error executing query: %w", err)
 	}
 
 	if len(warnings) > 0 {
-		hm.dependencies.AppCtx.Logger.Warn("Prometheus query warnings", "warnings", warnings)
+		hm.dependencies.AppCtx.Logger.Warn("Query warnings", "backend", backendName, "warnings", warnings)
 	}
 
 	return result, nil
 }
 
-func (hm *HandlersManager) QueryRangePrometheus(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration, orgID string) (interface{}, error) {
-	if hm.PrometheusClient == nil {
-		return nil, fmt.Errorf("prometheus client not initialized")
+func (hm *HandlersManager) QueryRange(ctx context.Context, backendName string, query string, startTime, endTime time.Time, step time.Duration, orgID string) (interface{}, error) {
+	client, err := hm.GetClient(backendName)
+	if err != nil {
+		return nil, err
 	}
 
 	if orgID != "" {
@@ -124,32 +113,33 @@ func (hm *HandlersManager) QueryRangePrometheus(ctx context.Context, query strin
 		Step:  step,
 	}
 
-	result, warnings, err := hm.PrometheusClient.QueryRange(ctx, query, r)
+	result, warnings, err := client.QueryRange(ctx, query, r)
 	if err != nil {
 		return nil, fmt.Errorf("error executing range query: %w", err)
 	}
 
 	if len(warnings) > 0 {
-		hm.dependencies.AppCtx.Logger.Warn("Prometheus range query warnings", "warnings", warnings)
+		hm.dependencies.AppCtx.Logger.Warn("Range query warnings", "backend", backendName, "warnings", warnings)
 	}
 
 	return result, nil
 }
 
-type prometheusTransport struct {
+type backendTransport struct {
 	transport http.RoundTripper
-	config    *api.PrometheusConfig
+	config    *api.BackendConfig
 	logger    *slog.Logger
+	name      string
 }
 
-func (pt *prometheusTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (bt *backendTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqClone := req.Clone(req.Context())
 
-	orgID := pt.config.OrgID
+	orgID := bt.config.OrgID
 	if ctxOrgID := req.Context().Value("org_id"); ctxOrgID != nil {
 		if id, ok := ctxOrgID.(string); ok && id != "" {
 			orgID = id
-			pt.logger.Debug("Using org_id from context", "org_id", orgID)
+			bt.logger.Debug("Using org_id from context", "backend", bt.name, "org_id", orgID)
 		}
 	}
 
@@ -157,85 +147,19 @@ func (pt *prometheusTransport) RoundTrip(req *http.Request) (*http.Response, err
 		reqClone.Header.Set("X-Scope-OrgId", orgID)
 	}
 
-	switch pt.config.Auth.Type {
+	switch bt.config.Auth.Type {
 	case "basic":
-		if pt.config.Auth.Username != "" && pt.config.Auth.Password != "" {
-			auth := pt.config.Auth.Username + ":" + pt.config.Auth.Password
+		if bt.config.Auth.Username != "" && bt.config.Auth.Password != "" {
+			auth := bt.config.Auth.Username + ":" + bt.config.Auth.Password
 			reqClone.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
-			pt.logger.Debug("Added basic auth to Prometheus request", "username", pt.config.Auth.Username)
+			bt.logger.Debug("Added basic auth to request", "backend", bt.name, "username", bt.config.Auth.Username)
 		}
 	case "token":
-		if pt.config.Auth.Token != "" {
-			reqClone.Header.Set("Authorization", "Bearer "+pt.config.Auth.Token)
-			pt.logger.Debug("Added bearer token to Prometheus request")
+		if bt.config.Auth.Token != "" {
+			reqClone.Header.Set("Authorization", "Bearer "+bt.config.Auth.Token)
+			bt.logger.Debug("Added bearer token to request", "backend", bt.name)
 		}
 	}
 
-	return pt.transport.RoundTrip(reqClone)
-}
-
-type pmmTransport struct {
-	transport http.RoundTripper
-	config    *api.PMMConfig
-	logger    *slog.Logger
-}
-
-func (pt *pmmTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	reqClone := req.Clone(req.Context())
-
-	switch pt.config.Auth.Type {
-	case "basic":
-		if pt.config.Auth.Username != "" && pt.config.Auth.Password != "" {
-			auth := pt.config.Auth.Username + ":" + pt.config.Auth.Password
-			reqClone.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
-			pt.logger.Debug("Added basic auth to PMM request", "username", pt.config.Auth.Username)
-		}
-	case "token":
-		if pt.config.Auth.Token != "" {
-			reqClone.Header.Set("Authorization", "Bearer "+pt.config.Auth.Token)
-			pt.logger.Debug("Added bearer token to PMM request")
-		}
-	}
-
-	return pt.transport.RoundTrip(reqClone)
-}
-
-func (hm *HandlersManager) QueryPMM(ctx context.Context, query string, timestamp time.Time) (interface{}, error) {
-	if hm.PMMClient == nil {
-		return nil, fmt.Errorf("PMM client not initialized")
-	}
-
-	result, warnings, err := hm.PMMClient.Query(ctx, query, timestamp)
-	if err != nil {
-		return nil, fmt.Errorf("error executing PMM query: %w", err)
-	}
-
-	if len(warnings) > 0 {
-		hm.dependencies.AppCtx.Logger.Warn("PMM query warnings", "warnings", warnings)
-	}
-
-	return result, nil
-}
-
-func (hm *HandlersManager) QueryRangePMM(ctx context.Context, query string, startTime, endTime time.Time, step time.Duration) (interface{}, error) {
-	if hm.PMMClient == nil {
-		return nil, fmt.Errorf("PMM client not initialized")
-	}
-
-	r := v1.Range{
-		Start: startTime,
-		End:   endTime,
-		Step:  step,
-	}
-
-	result, warnings, err := hm.PMMClient.QueryRange(ctx, query, r)
-	if err != nil {
-		return nil, fmt.Errorf("error executing PMM range query: %w", err)
-	}
-
-	if len(warnings) > 0 {
-		hm.dependencies.AppCtx.Logger.Warn("PMM range query warnings", "warnings", warnings)
-	}
-
-	return result, nil
+	return bt.transport.RoundTrip(reqClone)
 }

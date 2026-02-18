@@ -4,3 +4,7 @@ server:
   version: "0.1.0"
   transport:
     type: "stdio"
+
+backends:
+  prometheus:
+    url: "http://localhost:9090"

@@ -10,11 +10,12 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (tm *ToolsManager) HandleToolQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
-		Query string `json:"query"`
-		Time  string `json:"time,omitempty"`
-		OrgID string `json:"org_id,omitempty"`
+		Backend string `json:"backend,omitempty"`
+		Query   string `json:"query"`
+		Time    string `json:"time,omitempty"`
+		OrgID   string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -24,6 +25,13 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 	if err = json.Unmarshal(argsBytes, &args); err != nil {
 		return mcp.NewToolResultError("failed to parse arguments: " + err.Error()), nil
 	}
+
+	backendName, err := tm.resolveBackend(args.Backend)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	tm.warnIfOrgIDIgnored(backendName, args.OrgID)
 
 	if args.Query == "" {
 		return mcp.NewToolResultError("query parameter is required"), nil
@@ -39,9 +47,9 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		timestamp = time.Now()
 	}
 
-	result, err := tm.dependencies.HandlersManager.QueryPrometheus(ctx, args.Query, timestamp, args.OrgID)
+	result, err := tm.dependencies.HandlersManager.Query(ctx, backendName, args.Query, timestamp, args.OrgID)
 	if err != nil {
-		return mcp.NewToolResultError("failed to execute Prometheus query: " + err.Error()), nil
+		return mcp.NewToolResultError(fmt.Sprintf("failed to execute query on backend %q: %s", backendName, err.Error())), nil
 	}
 
 	resultTOON, err := gotoon.Encode(result)
@@ -49,6 +57,6 @@ func (tm *ToolsManager) HandleToolPrometheusQuery(ctx context.Context, request m
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Prometheus Query Results:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
-		args.Query, timestamp.Format(time.RFC3339), resultTOON)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Query Results [%s]:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
+		backendName, args.Query, timestamp.Format(time.RFC3339), resultTOON)), nil
 }
