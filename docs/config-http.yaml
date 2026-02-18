@@ -7,25 +7,25 @@ server:
     http:
       host: ":8080"
 
-# Prometheus Configuration (Grafana Mimir/Cortex compatible)
-prometheus:
-  url: "http://mimir-gateway.monitoring.svc.cluster.local/prometheus"
-  org_id: "default-tenant"
-  available_orgs:
-    - default-tenant
-    - tenant-dev
-  # auth:
-  #   type: "basic"
-  #   username: "user"
-  #   password: "${PROMETHEUS_PASSWORD}"
+# Backends Configuration
+backends:
+  prometheus:
+    url: "http://localhost:8000/prometheus"
+    org_id: "freepik-company"
+    available_orgs:
+      - freepik-company
+      - freepik-company-slx
+    # auth:
+    #   type: "basic"
+    #   username: "user"
+    #   password: "${PROMETHEUS_PASSWORD}"
 
-# PMM Configuration (Percona Monitoring and Management - VictoriaMetrics backend)
-pmm:
-  url: "http://pmm.monitoring.svc.cluster.local:8080"
-  # auth:
-  #   type: "basic"
-  #   username: "admin"
-  #   password: "${PMM_PASSWORD}"
+  pmm:
+    url: "http://localhost:9000/prometheus"
+    auth:
+      type: "basic"
+      username: "admin"
+      password: "${PMM_PASSWORD}"
 
 # Middleware Configuration
 middleware:

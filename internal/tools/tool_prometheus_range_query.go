@@ -10,13 +10,14 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (tm *ToolsManager) HandleToolRangeQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args struct {
-		Query string `json:"query"`
-		Start string `json:"start"`
-		End   string `json:"end"`
-		Step  string `json:"step,omitempty"`
-		OrgID string `json:"org_id,omitempty"`
+		Backend string `json:"backend,omitempty"`
+		Query   string `json:"query"`
+		Start   string `json:"start"`
+		End     string `json:"end"`
+		Step    string `json:"step,omitempty"`
+		OrgID   string `json:"org_id,omitempty"`
 	}
 
 	argsBytes, err := json.Marshal(request.Params.Arguments)
@@ -26,6 +27,13 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 	if err = json.Unmarshal(argsBytes, &args); err != nil {
 		return mcp.NewToolResultError("failed to parse arguments: " + err.Error()), nil
 	}
+
+	backendName, err := tm.resolveBackend(args.Backend)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	tm.warnIfOrgIDIgnored(backendName, args.OrgID)
 
 	if args.Query == "" {
 		return mcp.NewToolResultError("query parameter is required"), nil
@@ -56,9 +64,9 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		}
 	}
 
-	result, err := tm.dependencies.HandlersManager.QueryRangePrometheus(ctx, args.Query, startTime, endTime, step, args.OrgID)
+	result, err := tm.dependencies.HandlersManager.QueryRange(ctx, backendName, args.Query, startTime, endTime, step, args.OrgID)
 	if err != nil {
-		return mcp.NewToolResultError("failed to execute Prometheus range query: " + err.Error()), nil
+		return mcp.NewToolResultError(fmt.Sprintf("failed to execute range query on backend %q: %s", backendName, err.Error())), nil
 	}
 
 	resultTOON, err := gotoon.Encode(result)
@@ -66,6 +74,6 @@ func (tm *ToolsManager) HandleToolPrometheusRangeQuery(ctx context.Context, requ
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Prometheus Range Query Results:\n\nQuery: %s\nStart: %s\nEnd: %s\nStep: %s\n\nResults:\n%s",
-		args.Query, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), step.String(), resultTOON)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("Range Query Results [%s]:\n\nQuery: %s\nStart: %s\nEnd: %s\nStep: %s\n\nResults:\n%s",
+		backendName, args.Query, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), step.String(), resultTOON)), nil
 }

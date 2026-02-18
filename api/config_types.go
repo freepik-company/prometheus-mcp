@@ -90,19 +90,12 @@ type AuthConfig struct {
 	Token    string `yaml:"token,omitempty"`    // For bearer token auth
 }
 
-// PrometheusAuthConfig is an alias for backward compatibility
-type PrometheusAuthConfig = AuthConfig
-
-type PrometheusConfig struct {
+// BackendConfig represents the configuration of a metrics backend
+type BackendConfig struct {
 	URL           string     `yaml:"url"`
 	OrgID         string     `yaml:"org_id,omitempty"`
 	AvailableOrgs []string   `yaml:"available_orgs,omitempty"`
 	Auth          AuthConfig `yaml:"auth,omitempty"`
-}
-
-type PMMConfig struct {
-	URL  string     `yaml:"url"`
-	Auth AuthConfig `yaml:"auth,omitempty"`
 }
 
 // Configuration represents the complete configuration structure
@@ -111,6 +104,5 @@ type Configuration struct {
 	Middleware               MiddlewareConfig             `yaml:"middleware,omitempty"`
 	OAuthAuthorizationServer OAuthAuthorizationServer     `yaml:"oauth_authorization_server,omitempty"`
 	OAuthProtectedResource   OAuthProtectedResourceConfig `yaml:"oauth_protected_resource,omitempty"`
-	Prometheus               PrometheusConfig             `yaml:"prometheus,omitempty"`
-	PMM                      PMMConfig                    `yaml:"pmm,omitempty"`
+	Backends                 map[string]BackendConfig     `yaml:"backends,omitempty"`
 }
