@@ -10,18 +10,18 @@ server:
 # Backends Configuration
 backends:
   prometheus:
-    url: "http://localhost:8000/prometheus"
-    org_id: "freepik-company"
+    url: "http://localhost:9090"
+    org_id: "my-tenant"
     available_orgs:
-      - freepik-company
-      - freepik-company-slx
+      - my-tenant
+      - my-tenant-dev
     # auth:
     #   type: "basic"
     #   username: "user"
     #   password: "${PROMETHEUS_PASSWORD}"
 
   pmm:
-    url: "http://localhost:9000/prometheus"
+    url: "http://localhost:8080/prometheus"
     auth:
       type: "basic"
       username: "admin"
