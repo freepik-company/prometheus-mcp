@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"prometheus-mcp/internal/globals"
 	"prometheus-mcp/internal/handlers"
@@ -53,8 +52,17 @@ func main() {
 
 	switch appCtx.Config.Server.Transport.Type {
 	case "http":
+		// NOTE: WithHeartbeatInterval is deliberately NOT set.
+		// mcp-go's heartbeat emits a JSON-RPC `ping` REQUEST over the SSE
+		// stream; the client answers with a normal JSON-RPC response
+		// ({"jsonrpc":"2.0","id":N,"result":{}}). streamable_http.go then
+		// classifies any id-bearing, method-less message carrying a result
+		// as a *sampling response*, looks for a matching pending sampling
+		// request, finds none, and returns HTTP 500 to the client — once per
+		// heartbeat, to every client. Verified in v0.37.0 and v0.43.2.
+		// Connection keep-alive is handled at the mesh instead
+		// (DestinationRule connectionPool.http.idleTimeout=3600s).
 		httpServer := server.NewStreamableHTTPServer(mcpServer,
-			server.WithHeartbeatInterval(30*time.Second),
 			server.WithStateLess(false))
 
 		mux := http.NewServeMux()
