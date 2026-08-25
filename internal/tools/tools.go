@@ -11,6 +11,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/prometheus/common/model"
 )
 
 type ToolsManagerDependencies struct {
@@ -29,6 +30,17 @@ func NewToolsManager(deps ToolsManagerDependencies) *ToolsManager {
 	return &ToolsManager{
 		dependencies: deps,
 	}
+}
+
+// promResultType reports the Prometheus result type ("matrix", "vector",
+// "scalar", "string") of a query result, so structured payloads can carry the
+// same `resultType` discriminator the Prometheus HTTP API exposes. Returns an
+// empty string for anything that is not a model.Value.
+func promResultType(result any) string {
+	if value, ok := result.(model.Value); ok {
+		return value.Type().String()
+	}
+	return ""
 }
 
 func (tm *ToolsManager) resolveBackend(backendArg string) (string, error) {

@@ -91,17 +91,23 @@ func (tm *ToolsManager) HandleToolListMetrics(ctx context.Context, request mcp.C
 	paginatedResult := filtered[start:end]
 	hasMore := end < totalFiltered
 
-	resultTOON, err := gotoon.Encode(map[string]interface{}{
+	payload := map[string]interface{}{
 		"total_metrics": totalFiltered,
 		"returned":      len(paginatedResult),
 		"offset":        args.Offset,
 		"limit":         args.Limit,
 		"has_more":      hasMore,
 		"metrics":       paginatedResult,
-	})
+	}
+
+	resultTOON, err := gotoon.Encode(payload)
 	if err != nil {
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Available Metrics [%s]:\n\n%s", backendName, resultTOON)), nil
+	// Same data as the text above, but machine-readable.
+	payload["backend"] = backendName
+
+	return mcp.NewToolResultStructured(payload,
+		fmt.Sprintf("Available Metrics [%s]:\n\n%s", backendName, resultTOON)), nil
 }
