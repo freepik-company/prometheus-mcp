@@ -57,6 +57,24 @@ func (tm *ToolsManager) HandleToolQuery(ctx context.Context, request mcp.CallToo
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Query Results [%s]:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
-		backendName, args.Query, timestamp.Format(time.RFC3339), resultTOON)), nil
+	text := fmt.Sprintf("Query Results [%s]:\n\nQuery: %s\nTimestamp: %s\n\nResults:\n%s",
+		backendName, args.Query, timestamp.Format(time.RFC3339), resultTOON)
+
+	// Structured payload mirrors the Prometheus HTTP API `data` object
+	// (`resultType` + `result`) so machine consumers can parse it without
+	// scraping the human-readable text above, which stays unchanged.
+	structured := map[string]any{
+		"backend":   backendName,
+		"query":     args.Query,
+		"timestamp": timestamp.Format(time.RFC3339),
+		// `data` mirrors the Prometheus HTTP API response object, so any
+		// Prometheus-aware consumer can read it without special-casing
+		// this server.
+		"data": map[string]any{
+			"resultType": promResultType(result),
+			"result":     result,
+		},
+	}
+
+	return mcp.NewToolResultStructured(structured, text), nil
 }

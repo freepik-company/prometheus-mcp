@@ -74,6 +74,26 @@ func (tm *ToolsManager) HandleToolRangeQuery(ctx context.Context, request mcp.Ca
 		return mcp.NewToolResultError("failed to marshal result: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Range Query Results [%s]:\n\nQuery: %s\nStart: %s\nEnd: %s\nStep: %s\n\nResults:\n%s",
-		backendName, args.Query, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), step.String(), resultTOON)), nil
+	text := fmt.Sprintf("Range Query Results [%s]:\n\nQuery: %s\nStart: %s\nEnd: %s\nStep: %s\n\nResults:\n%s",
+		backendName, args.Query, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339), step.String(), resultTOON)
+
+	// Structured payload mirrors the Prometheus HTTP API `data` object
+	// (`resultType` + `result`) so machine consumers can parse it without
+	// scraping the human-readable text above, which stays unchanged.
+	structured := map[string]any{
+		"backend": backendName,
+		"query":   args.Query,
+		"start":   startTime.Format(time.RFC3339),
+		"end":     endTime.Format(time.RFC3339),
+		"step":    step.String(),
+		// `data` mirrors the Prometheus HTTP API response object, so any
+		// Prometheus-aware consumer can read it without special-casing
+		// this server.
+		"data": map[string]any{
+			"resultType": promResultType(result),
+			"result":     result,
+		},
+	}
+
+	return mcp.NewToolResultStructured(structured, text), nil
 }
